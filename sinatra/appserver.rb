@@ -14,9 +14,9 @@ require './lib/cometa-ruby.rb'
 #
 # Change the values with the registered application name and credentials:
 #
-Cometa.app_name = "star"
-Cometa.app_key = "a54fca5262b26e58b66e"
-Cometa.app_secret = "2367f4aedaf70fd64dd1"
+Cometa.app_name = "YOUR_COMETA_APP_NAME"
+Cometa.app_key = "YOUR_COMETA_APP_KEY"
+Cometa.app_secret = "YOUR_COMETA_APP_SECRET"
 
 #
 # Check if a device is authorized to use the application.

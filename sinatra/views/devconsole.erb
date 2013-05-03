@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Cometa Application Server API Console</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Marco Graziano">	
+
+    <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .row {
+          margin: 10px 0;
+      }
+      #info_device_id, #publish_device_id {margin-bottom:16px;}
+      p {margin-top:20px;}
+      #Canvas {margin-top:48px;}
+    </style>
+<!--    <link href="css/bootstrap-responsive.css" rel="stylesheet">	 -->
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="#">Cometa Application Server API Console</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="span12">
+                <input id="app_name" type="text" class="input-medium search-query"  placeholder="Application Name">
+    	        <input id="app_key" type="text" class="search-query input-large" placeholder="Application Key">
+            </div>
+        </div>
+        <div class="row">    
+            <div class="span3">
+                <div class="form-horizontal">
+                    <p>/send.json</p>
+                    <input id="publish_device_id" type="text" class="input-large"  placeholder="Device ID">
+                    <textarea id="message_body" rows="5" placeholder="Message"></textarea>
+                    <p>/info.json</p>
+                    <input id="info_device_id" type="text" class="input-large"  placeholder="Device ID">
+                    <button id="send_btn" class="btn btn-danger">Send</button>
+                </div>
+            </div>
+            <div class="span8">
+                <!-- Commands JSON formatted output -->
+    		        <span id="cmd"></span>
+		 	        <div id="Canvas">
+			        </div>
+            </div>
+      </div>
+      <hr>
+      <footer>
+        <p class="muted">&copy; Visible Energy Inc., 2013 <a href="http://www.visiblenergy.com"><i class="icon-zoom-in"></i></a></p>
+      </footer>
+    </div> <!-- /container -->
+    
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js"></script>
+    <script language="javascript" type="text/javascript" src="http://cloudfridge.io/js/formatJSON.js"></script>
+    <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
+</body>
+
+<script>
+// global object
+MYAPP = {
+    timeout: 5000,
+	app_name: "<%= @app_name %>",
+    app_key: "",
+    app_secret: "",
+    http_host: "<%= @http_host %>",
+}
+
+// send a command to the device - parse and display the output
+function sendCmd(cmd, body) {
+    var Url = "http://" + MYAPP.http_host + cmd;
+    var htmlUrl = ProcessObject({ "url" : Url }, 0, false, false, false);
+
+    console.log(Url);
+	// empty the canvas
+	$('#Canvas').html("");
+
+	// issue the request
+	$.ajax({
+		type: (Url.search("/send?") > 0) ? 'POST' : 'GET',
+		dataType: 'json',
+        data: body,
+		async: true,
+		timeout: MYAPP.timeout,
+		url: Url,
+		success: function(data) { 
+			var obj = eval(data);
+			var html = ProcessObject(obj, 0, false, false, false);
+			$('#Canvas').html("<PRE class='CodeContainer'>" + html + "</PRE>");
+            $('#Canvas').append("<PRE class='CodeContainer'>" + htmlUrl + "</PRE>");
+		},
+		error: function(jqXHR, textStatus, errorThrown) {
+			$('#Canvas').html("<PRE class='CodeContainer' style='color:red;'> Error in the request: " + textStatus + "</PRE>");
+		}
+		
+	});
+    
+	// remember last used
+    localStorage.setItem("Cometa-app_key", MYAPP.app_key);
+} // sendCmd
+
+
+$(document).ready(function() {
+	$('#Canvas').html("<pre><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/></pre>");
+
+    $('#app_name').val(MYAPP.app_name);
+    $('#app_key').val(localStorage.getItem("Cometa-app_key"));
+    
+    $('#send_btn').bind('click', function(e) {
+        var device_id;
+        var cmd;
+        var app_name = $('#app_name').val();
+        var app_key = $('#app_key').val();
+        var body = "";
+        
+        /* priority to /publish command */
+        device_id = $('#publish_device_id').val();
+        cmd = "/send.json?device_id=" + $('#publish_device_id').val() + "&";
+        
+        if (device_id === "") {
+            device_id = $('#info_device_id').val();
+            cmd = "/info.json?app_key=" + app_key;
+        } else
+            cmd += "&app_key=" + app_key;
+        
+        if (app_name == "" || app_key == "") {
+            console.log("parameters missing.");
+            return;
+        }
+        
+        if ($('#publish_device_id').val() == "") {
+            /* send an /info command */
+            if (device_id != "")    /* device_id is optional */
+                cmd += "&device_id=" + device_id;
+        } else {
+            /* send a /publish command */
+            body = $('#message_body').val();
+        }
+        // console.log("cmd = " + cmd);
+
+        MYAPP.app_name = app_name;
+        MYAPP.app_key = app_key;
+    
+        sendCmd(cmd, body);
+    });
+
+}); // document.ready
+
+</script>
+</html>

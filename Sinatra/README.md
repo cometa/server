@@ -16,6 +16,10 @@ Before running the application, change the values for the following variables:
 
 Usage
 -----
+Install the required gems:
+
+	bundle install
+
 To run the application:
 
 	ruby appserver.rb

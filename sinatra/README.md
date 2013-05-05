@@ -4,7 +4,7 @@ A fully functional Sinatra Web application that interacts with device subscribed
 
 Installation
 ------------
-The application relies on the Cometa Ruby library in `lib/cometa-ruby.rb`. It doesn't use any database or persistent memory. 
+The application relies on the Cometa Ruby library in `./lib/cometa-ruby.rb` and the ERB templates in `./views`. It doesn't use any database or persistent memory. 
 
 Devices must be known to the application and need to subscribe to it before messages can be exchanged. The `check_device` method must be implemented to authenticate a device. It is currently an empty method. Note: this is not a method to authenticate the device with Cometa, but only with this application server.
 

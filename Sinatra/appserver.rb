@@ -32,22 +32,16 @@ require 'thread'
 
 # https://github.com/simulacre/sinatra-websocket
 
-
 # Cometa Ruby server library
 require './lib/cometa-ruby.rb'
 
 #
 # Change the values with the registered application name and credentials:
 #
-#yometa.app_name = "YOUR_COMETA_APP_NAME"
-#Cometa.app_key = "YOUR_COMETA_APP_KEY"
-#Cometa.app_secret = "YOUR_COMETA_APP_SECRET"
-#Cometa.app_name = "cometatest"
-#Cometa.app_key = "946604ed1d981eca2879"
-#Cometa.app_secret = "ea724dc4811d50768084"
-Cometa.app_name = "cloudfridge"
-Cometa.app_key = "5465b57fdeb0d16712d6"
-Cometa.app_secret = "aa375b970d037fb0fb2e"
+Cometa.app_name = "YOUR_COMETA_APP_NAME"
+Cometa.app_key = "YOUR_COMETA_APP_KEY"
+Cometa.app_secret = "YOUR_COMETA_APP_SECRET"
+
 
 #
 # Check if a device is authorized to use the application.

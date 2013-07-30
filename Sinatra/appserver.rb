@@ -31,7 +31,6 @@ require 'sinatra-websocket'
 require 'thread'
 
 # https://github.com/simulacre/sinatra-websocket
-#set :sockets, []
 
 
 # Cometa Ruby server library
@@ -75,6 +74,7 @@ puts "Application " + Cometa.app_name + " connected to Cometa server."
 mutex = Mutex.new
 cv = ConditionVariable.new
 @@message
+set :sockets, []
 
 get '/' do
   if !request.websocket?
@@ -84,13 +84,15 @@ get '/' do
   else
     request.websocket do |ws|
       ws.onopen do
+        cv = ConditionVariable.new  
+        settings.sockets << ws  
         while true
         mutex.synchronize {
             # wait for a message to be received from a device
             cv.wait(mutex)
             # the message is in the global variable
             puts "Websockets: sending the message: " + @@message
-            EM.next_tick { ws.send("Received event from stardust: " + @@message) }
+            EM.next_tick { settings.sockets.each{|s| s.send(@@message) } }
         }
         end
       end
@@ -98,8 +100,8 @@ get '/' do
 #        EM.next_tick { settings.sockets.each{|s| s.send(msg) } }
 #      end
       ws.onclose do
+        settings.sockets.delete(ws)  
         warn("wetbsocket closed")
-        cv = ConditionVariable.new
       end
     end
   end

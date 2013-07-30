@@ -27,6 +27,12 @@ require 'rubygems'
 require 'sinatra'
 require 'erb'
 require 'json'
+require 'sinatra-websocket'
+require 'thread'
+
+# https://github.com/simulacre/sinatra-websocket
+#set :sockets, []
+
 
 # Cometa Ruby server library
 require './lib/cometa-ruby.rb'
@@ -34,9 +40,15 @@ require './lib/cometa-ruby.rb'
 #
 # Change the values with the registered application name and credentials:
 #
-Cometa.app_name = "YOUR_COMETA_APP_NAME"
-Cometa.app_key = "YOUR_COMETA_APP_KEY"
-Cometa.app_secret = "YOUR_COMETA_APP_SECRET"
+#yometa.app_name = "YOUR_COMETA_APP_NAME"
+#Cometa.app_key = "YOUR_COMETA_APP_KEY"
+#Cometa.app_secret = "YOUR_COMETA_APP_SECRET"
+#Cometa.app_name = "cometatest"
+#Cometa.app_key = "946604ed1d981eca2879"
+#Cometa.app_secret = "ea724dc4811d50768084"
+Cometa.app_name = "cloudfridge"
+Cometa.app_key = "5465b57fdeb0d16712d6"
+Cometa.app_secret = "aa375b970d037fb0fb2e"
 
 #
 # Check if a device is authorized to use the application.
@@ -52,12 +64,58 @@ end
 # ------------------------------------------------------------------------
 
 set :server, %w[thin]
-set :port, 17017
+set :port, 7017
 
 # needed to avoid CORS warnings from Rack 
 set :protection, :except => [:http_origin]
 
-puts "Application connected to Cometa server."
+puts "Application " + Cometa.app_name + " connected to Cometa server."
+
+# used to synchronize the websockets server with the upload requests
+mutex = Mutex.new
+cv = ConditionVariable.new
+@@message
+
+get '/' do
+  if !request.websocket?
+    status(404)
+    content_type('application/json')
+    return {:status => 404, :error => "Endpoint not in the API."}.to_json
+  else
+    request.websocket do |ws|
+      ws.onopen do
+        while true
+        mutex.synchronize {
+            # wait for a message to be received from a device
+            cv.wait(mutex)
+            # the message is in the global variable
+            puts "Websockets: sending the message: " + @@message
+            EM.next_tick { ws.send("Received event from stardust: " + @@message) }
+        }
+        end
+      end
+#      ws.onmessage do |msg|
+#        EM.next_tick { settings.sockets.each{|s| s.send(msg) } }
+#      end
+      ws.onclose do
+        warn("wetbsocket closed")
+        cv = ConditionVariable.new
+      end
+    end
+  end
+end
+
+#
+# Webhook to receive a POST when upstream messages (HTTP chunks) are sent by a device
+#
+post "/upload" do
+    mutex.synchronize {
+        ## move the message in the request into a global variable
+        @@message = request.env["rack.input"].read
+        # signal the websockets thread that a message is available
+        cv.signal
+    }
+end
 
 #
 # An application server must implement a GET method to be used within the device
@@ -101,11 +159,15 @@ get "/authenticate" do
         content_type('application/json')
         return {:response => 403, :error => "Device is forbidden."}.to_json
     end
+
+puts params
+#return {:response => 403, :error => "Debugging."}.to_json
     
     # use the helper to get a signature for the provided challenge
     signature = Cometa.signature(params[:challenge])
     
     # return a JSON object to the device
+    puts signature.to_json
     status(200)
     content_type('application/json')
     return {:response => 200, :signature => signature }.to_json
@@ -206,5 +268,3 @@ not_found do
   content_type('application/json')
   return {:status => 404, :error => "Endpoint not in the API."}.to_json
 end
-
-

@@ -38,10 +38,15 @@ require './lib/cometa-ruby.rb'
 #
 # Change the values with the registered application name and credentials:
 #
-Cometa.app_name = "YOUR_COMETA_APP_NAME"
-Cometa.app_key = "YOUR_COMETA_APP_KEY"
-Cometa.app_secret = "YOUR_COMETA_APP_SECRET"
-
+#Cometa.app_name = "YOUR_COMETA_APP_NAME"
+#Cometa.app_key = "YOUR_COMETA_APP_KEY"
+#Cometa.app_secret = "YOUR_COMETA_APP_SECRET"
+#Cometa.app_name = "cometatest"
+#Cometa.app_key = "946604ed1d981eca2879"
+#Cometa.app_secret = "ea724dc4811d50768084"
+Cometa.app_name = "cloudfridge"
+Cometa.app_key = "5465b57fdeb0d16712d6"
+Cometa.app_secret = "aa375b970d037fb0fb2e"
 
 #
 # Check if a device is authorized to use the application.
@@ -70,6 +75,8 @@ cv = ConditionVariable.new
 @@message
 set :sockets, []
 
+
+
 get '/' do
   if !request.websocket?
     status(404)
@@ -78,7 +85,7 @@ get '/' do
   else
     request.websocket do |ws|
       ws.onopen do
-        cv = ConditionVariable.new  
+        #cv = ConditionVariable.new  
         settings.sockets << ws  
         while true
         mutex.synchronize {
@@ -207,6 +214,7 @@ post "/send.json" do
     puts "DEBUG: response from Cometa: " + reply
     
     status(200)
+    headers 'Access-Control-Allow-Origin' => "*"
     content_type('application/json')
     return reply
 end

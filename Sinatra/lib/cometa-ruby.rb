@@ -27,7 +27,7 @@ require 'socket'
 require 'openssl'
 require 'net/http'
 
-COMETA_HOSTNAME = "api.cometa.io"
+COMETA_HOSTNAME = "service.cometa.io"
 COMETA_PORT = 7007
 
 @@cometa_sock
@@ -111,7 +111,7 @@ class Cometa
         request.body = message
         request["Content-Type"]="application/json"
         http = Net::HTTP.new(uri.host, uri.port)
-
+        # puts "in publish - " + message
         reply = http.request(request)
 
         # the Cometa server returns a JSON object such as:
@@ -142,5 +142,5 @@ class Cometa
         
         reply.body
     end
-  
+    
 end
